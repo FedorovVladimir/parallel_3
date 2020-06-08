@@ -4,6 +4,7 @@
 #include <queue>
 #include <list>
 #include <thread>
+#include <omp.h>
 
 using namespace std;
 
@@ -35,7 +36,6 @@ void createGeneration () {
         pets.push_back(createPet());
     }
 }
-
 void displayPet(const vector<int>& vector) {
     for (int i : vector)
         cout << i << " ";
@@ -51,9 +51,9 @@ void mutationGeneration() {
         }
     }
 }
-
 vector<int> crossingGeneration(const vector<int>& vector1, const vector<int>& vector2) {
     vector<int> vector3 = createPet();
+    #pragma omp parallel for num_threads(4)
     for (unsigned i = 0; i < edges.size(); ++i) {
         if (i < edges.size()) {
             vector3[i] = vector1[i];
