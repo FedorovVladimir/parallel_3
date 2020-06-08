@@ -3,6 +3,7 @@
 #include <ctime>
 #include <queue>
 #include <list>
+#include <thread>
 
 using namespace std;
 
@@ -80,13 +81,13 @@ vector<vector<int>> extinctionGeneration() {
     }
     return newPets;
 }
-int calcCount(const vector<int>& vector) {
+int calcCount(const vector<int>& vector, int& count) {
     queue<int> q;
     bool used[n];
     for (bool & i : used) {
         i = false;
     }
-    int count = 0;
+    count = 0;
     for (int number = 0; number < n; number++) {
         if (!used[number]) {
             used[number]  = true;
@@ -120,7 +121,7 @@ int calcCount(const vector<int>& vector) {
     }
     return count;
 }
-int calcMax(const vector<int>& vector) {
+int calcMax(const vector<int>& vector, int& max) {
     list<int> weights;
     queue<int> q;
     bool used[n];
@@ -163,7 +164,8 @@ int calcMax(const vector<int>& vector) {
         weights.push_back(weight);
     }
     weights.sort();
-    return abs(weights.front() - weights.back());
+    max = abs(weights.front() - weights.back());
+    return max;
 }
 void displayGeneration(int number_generation, const string& str = "") {
     if (!str.empty()) {
@@ -173,15 +175,38 @@ void displayGeneration(int number_generation, const string& str = "") {
     }
     for (const auto & pet : pets) {
         displayPet(pet);
-        cout << "count: " << calcCount(pet) << " ";
-        cout << "count: " << calcMax(pet) << endl;
+        int a;
+        cout << "count: " << calcCount(pet, a) << " ";
+        cout << "count: " << calcMax(pet, a) << endl;
     }
 }
 bool betteAdapted(const vector<int>& vector1, const vector<int>& vector2) {
-    int count1 = calcCount(vector1);
-    int count2 = calcCount(vector2);
-    int max1 = calcMax(vector1);
-    int max2 = calcMax(vector2);
+    int count1 = calcCount(vector1, count1);
+    int count2 = calcCount(vector2, count2);
+    int max1 = calcMax(vector1, max1);
+    int max2 = calcMax(vector2, max2);
+    if (abs(k - count2) - abs(k - count1) == 0) {
+        return max1 < max2;
+    }
+    return abs(k - count2) > abs(k - count1);
+}
+bool betteAdaptedParallel(const vector<int>& vector1, const vector<int>& vector2) {
+
+    int count1, count2;
+
+    thread thread1(calcCount, vector1, std::ref(count1));
+    thread thread2(calcCount, vector2, std::ref(count2));
+
+    thread1.join();
+    thread2.join();
+
+    int max1, max2;
+    thread threadMax1(calcMax, vector1, std::ref(max1));
+    thread threadMax2(calcMax, vector2, std::ref(max2));
+
+    threadMax1.join();
+    threadMax2.join();
+
     if (abs(k - count2) - abs(k - count1) == 0) {
         return max1 < max2;
     }
@@ -190,7 +215,7 @@ bool betteAdapted(const vector<int>& vector1, const vector<int>& vector2) {
 void sortPets() {
     for (unsigned i = 0; i < pets.size(); i++) {
         for (unsigned j = 0; j < pets.size(); j++) {
-            if (betteAdapted(pets[i], pets[j])) {
+            if (betteAdaptedParallel(pets[i], pets[j])) {
                 vector<int> pet = pets[i];
                 pets[i] = pets[j];
                 pets[j] = pet;
